@@ -1,13 +1,22 @@
 # encoding: utf-8
 
+require 'singleton'
+require './config'
+
 class Logger
-	def initialize(filepath=nil)
-		if filepath
-			@fd = open(filepath, 'a')
+	include Singleton
+
+	LEVELS = [:info, :debug, :warn, :error]
+
+	def initialize
+		@filepath = BMConfig::Log_file
+		@level = BMConfig::Log_level
+		if @filepath
+			@fd = open(@filepath, 'a')
 		else
 			@fd = STDOUT
 		end
-		@level = "INFO"
+		@type = "INFO"
 	end
 
 	def now
@@ -15,28 +24,37 @@ class Logger
 	end
 
 	def debug(msg)
-		@level = "DEBUG"
-		log msg
+		@type = "DEBUG"
+		log msg if level_test(:debug)
 	end
 
 	def error(msg)
-		@level = "ERROR"
-		log msg
+		@type = "ERROR"
+		log msg if level_test(:error)
 	end
 
 	def warn(msg)
-		@level = "WARN"
-		log msg
+		@type = "WARN"
+		log msg if level_test(:warn)
 	end
 
 	def info(msg)
-		@level = "INFO"
-		log msg
+		@type = "INFO"
+		log msg if level_test(:info)
 	end
 
 	def log(msg)
-		@fd.puts "[#{now}] [#{@level}] #{msg}"
+		@fd.puts "[#{now}] [#{@type}] #{msg}"
 	end
 
-	private :log
+	def level_test(method)
+		m = LEVELS.index method
+		l = LEVELS.index @level
+		m >= l
+	end
+
+	private :log, :level_test
 end
+
+# l = Logger.instance
+# l.info "hee"
